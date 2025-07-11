@@ -1,0 +1,7 @@
+openai
+python-dotenv
+apscheduler
+langchain
+langchain-openai
+croniter
+dateparser

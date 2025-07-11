@@ -1,0 +1,24 @@
+# House Project Test
+
+- Contacted architect
+- Reviewed blueprints
+- Contacted architect
+- Reviewed blueprints
+- Contacted architect
+- Reviewed blueprints
+- Contacted architect
+- Reviewed blueprints
+- Contacted architect
+- Reviewed blueprints
+- Contacted architect
+- Reviewed blueprints
+- Contacted architect
+- Reviewed blueprints
+- Contacted architect
+- Reviewed blueprints
+- Contacted architect
+- Reviewed blueprints
+- Contacted architect
+- Reviewed blueprints
+- Contacted architect
+- Reviewed blueprints
