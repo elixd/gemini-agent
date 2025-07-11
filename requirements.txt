@@ -1,7 +1,8 @@
 openai
 python-dotenv
 apscheduler
-langchain
+langchain[anthropic]
 langchain-openai
+langgraph
 croniter
 dateparser
