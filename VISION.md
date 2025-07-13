@@ -47,3 +47,21 @@ This architecture is designed to support a wide range of powerful, proactive int
 *   **Automated Journaling:** The user can ask the agent to prompt them every evening to record their thoughts. The agent can then use a dedicated `append_to_diary` tool to log the user's responses in a running diary file.
 *   **Personalized Affirmations:** The user can ask, "Tell me something positive every morning." The agent will schedule a daily job to send an uplifting or personalized message to the user at the start of their day.
 *   **Meeting Preparation:** By combining calendar awareness (Tier 1) and the ability to read notes (Tier 2), the agent could proactively summarize the relevant project note 30 minutes before a scheduled meeting and remind the user of the key points.
+
+## 5. Examples of how it can be used:
+- what time it is? (it would replay based on its dashboard info)
+- what time is it in New York (makes a tool call and replies based on that)
+
+
+## 6. Some implementation Ideas
+
+### managing agent working memory / context
+While it may not always neccesary to load every note and cocumtn in the context all the time. I think the agent might be able to add some files/notes/emails etc to context. not just make a fucntion call to read a note once, but request it to be kept ints context untill it says otherwise or untill the user says otherwise. for example i want to discuss some project with the agent. the agemt wll request it to be added to context 
+
+### Context Caching Considerations
+there is LLM provider level context caching. it only works if the promt prefix that is sent to llm stays the same. therefore it makes sense to keep static content in the beginning of the prompt and new/dynanic content at the end. For example, system prompt, then chat distory, and then current date-time. this way system prompt and chat history will hit cache. 
+
+
+
+
+
