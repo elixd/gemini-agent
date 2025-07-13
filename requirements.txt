@@ -4,5 +4,7 @@ apscheduler
 langchain[anthropic]
 langchain-openai
 langgraph
+langchain-community
 croniter
 dateparser
+pytz

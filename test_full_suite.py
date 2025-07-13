@@ -1,48 +1,61 @@
-
-
 import os
-from agent import agent_executor, scheduler
-from dashboard import build_dashboard_context
+import json
+from agent import run_agent
+from scheduler import Scheduler
 
-# --- Test Setup ---
-print("--- Test Setup ---")
-NOTE_TOPIC = "test_note"
-NOTE_FILE = f"notes/{NOTE_TOPIC}.md"
+# Clear schedule.json before tests run to ensure a clean state
+if os.path.exists('schedule.json'):
+    with open('schedule.json', 'w') as f:
+        json.dump([], f)
 
-# 1. Create a dummy note file
-with open(NOTE_FILE, "w") as f:
-    f.write("# This is a test note.\n")
-print(f"Created dummy note: {NOTE_FILE}")
+# Instantiate the scheduler
+scheduler = Scheduler('schedule.json')
 
-# --- Test Execution ---
-def run_turn(turn_name, user_input):
-    print(f"\n--- {turn_name} ---")
-    dashboard = build_dashboard_context(scheduler)
-    augmented_input = f"{dashboard}\n\nUser Request: {user_input}"
-    print(f"User Request: '{user_input}'")
-    response = agent_executor.invoke({"input": augmented_input})
-    print(f"Agent Response: {response['output']}")
-    return response['output']
+def test_create_note():
+    print("--- Testing create_note ---")
+    user_input = "Create a note about a new project called 'marketing_campaign'. The first item is to 'design a new logo'."
+    response = run_agent(user_input, scheduler)
+    print(f"Agent Output: {response['output']}")
+    assert os.path.exists("notes/marketing_campaign.md"), "Test Failed: Note was not created."
+    print("Test Passed: Note was created successfully.")
 
-# Turn 1: Verify list_notes tool
-run_turn("Turn 1: Listing Notes", "What notes do I have?")
+def test_read_note():
+    print("\n--- Testing read_note ---")
+    user_input = "Read the note about the 'marketing_campaign' project."
+    response = run_agent(user_input, scheduler)
+    print(f"Agent Output: {response['output']}")
+    with open("notes/marketing_campaign.md", "r") as f:
+        content = f.read()
+    assert "design a new logo" in content, "Test Failed: Note content is incorrect."
+    print("Test Passed: Note was read successfully.")
 
-# Turn 2: Verify read_note tool
-run_turn("Turn 2: Reading a Note", f"Read the {NOTE_TOPIC} note")
+import json
 
-# Turn 3: Verify enhanced error handling
-run_turn("Turn 3: Testing Error Handling", "Add 'test' to the non_existent_note")
+def test_schedule_job():
+    print("\n--- Testing schedule_job ---")
+    # Clear existing jobs before testing
+    with open(scheduler.job_file, 'w') as f:
+        json.dump([], f)
+    scheduler.load_jobs() # Reload empty jobs
 
-# Turn 4: Verify scheduling with new semantics
-run_turn("Turn 4: Scheduling an Agent Job", "schedule a job to remind me to check my email every hour")
+    user_input = "Schedule a reminder to 'follow up with the design team' with the cron schedule '0 10 * * *' (every day at 10am)."
+    response = run_agent(user_input, scheduler)
+    print(f"Agent Output: {response['output']}")
 
-# --- Test Cleanup ---
-print("\n--- Test Cleanup ---")
-os.remove(NOTE_FILE)
-print(f"Removed dummy note: {NOTE_FILE}")
-# Clean up any scheduled jobs
-for job in scheduler.scheduler.get_jobs():
-    job.remove()
-scheduler.save_jobs()
-print("Scheduled jobs cleaned up.")
+    # Verify the job is in the schedule.json file
+    with open(scheduler.job_file, 'r') as f:
+        jobs = json.load(f)
+    
+    found_job = False
+    for job in jobs:
+        if "follow up with the design team" in job['text'] and job['cron'] == '0 10 * * *' :
+            found_job = True
+            break
+    assert found_job, "Test Failed: Job was not scheduled correctly in schedule.json."
+    print("Test Passed: Job was scheduled successfully.")
 
+if __name__ == "__main__":
+    test_create_note()
+    test_read_note()
+    test_schedule_job()
+    print("\n--- All tests passed! ---")

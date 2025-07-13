@@ -1,19 +1,29 @@
+import os
+from agent import run_agent
+from scheduler import Scheduler
+from langchain_core.messages import HumanMessage, AIMessage
 
-from agent import agent_executor, scheduler
-from dashboard import build_dashboard_context
+scheduler = Scheduler('schedule.json')
+
+def handle_input(user_input, scheduler, chat_history):
+    return run_agent(user_input, scheduler, chat_history)
 
 def main():
     print("Welcome to your personal AI agent. Type 'exit' to quit.")
+    # Ensure the notes directory exists
+    os.makedirs('notes', exist_ok=True)
+
+    chat_history = []
+
     while True:
         user_input = input("> ")
         if user_input.lower() == 'exit':
             break
         
-        dashboard = build_dashboard_context(scheduler)
-        augmented_input = f"{dashboard}\n\nUser Request: {user_input}"
-        
-        response = agent_executor.invoke({"input": augmented_input}, tool_run_kwargs={"user_prompt": user_input})
-        print(response["output"])
+        response = handle_input(user_input, scheduler, chat_history)
+        print(response['output'])
+        chat_history.append(HumanMessage(content=user_input))
+        chat_history.append(AIMessage(content=response['output']))
 
 if __name__ == "__main__":
     main()

@@ -7,6 +7,10 @@ from langchain_openai import ChatOpenAI
 from langchain_core.tools import tool
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain.tools import StructuredTool
+from langchain_community.vectorstores import Chroma
+from langchain_openai import OpenAIEmbeddings
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import DirectoryLoader
 
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
@@ -70,6 +74,28 @@ llm_with_tools = llm.bind_tools(tools)
 with open("system_prompt.md", "r") as f:
     SYSTEM_PROMPT = f.read()
 
+# --- RAG Setup for Conditional Briefing (Tier 2) ---
+# Load notes from the 'notes/' directory
+notes_loader = DirectoryLoader('notes/', glob="**/*.md")
+notes_documents = notes_loader.load()
+
+# Split documents into chunks
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+notes_chunks = text_splitter.split_documents(notes_documents)
+
+# Initialize OpenAIEmbeddings for OpenRouter
+# Ensure OPENROUTER_API_KEY is set and accessible
+embeddings = OpenAIEmbeddings(
+    openai_api_base="https://openrouter.ai/api/v1",
+    openai_api_key=os.getenv("OPENROUTER_API_KEY"),
+    model="text-embedding-ada-002" # Or another suitable embedding model from OpenRouter
+)
+
+# Create an in-memory Chroma vector store from the note chunks
+notes_vectorstore = Chroma.from_documents(notes_chunks, embeddings)
+notes_retriever = notes_vectorstore.as_retriever()
+
+
 # --- Define Graph State ---
 # This defines the state of our graph, which will be passed between nodes.
 # 'messages' is annotated to automatically append new messages.
@@ -86,9 +112,19 @@ def build_context_node(state: AgentState) -> dict:
     # Tier 1: Unconditional Dashboard
     dashboard = build_dashboard_context(scheduler) # Pass scheduler instance
     
-    # Tier 2: Conditional Briefing (Placeholder for now, will be expanded)
-    # For now, we'll keep it simple. In future, this would involve RAG or other logic.
+    # Tier 2: Conditional Briefing (RAG on notes)
     conditional_briefing = ""
+    user_query = state.get("user_prompt", "")
+    if user_query:
+        # Perform RAG on notes based on user query
+        relevant_notes = notes_retriever.invoke(user_query)
+        if relevant_notes:
+            conditional_briefing = f"""Relevant Notes:
+{
+"\n---\n".join([doc.page_content for doc in relevant_notes])
+}"""
+        else:
+            conditional_briefing = "No relevant notes found."
 
     return {
         "dashboard_context": dashboard,
@@ -156,6 +192,7 @@ if __name__ == "__main__":
         "What is the current time in New York?",
         "Schedule a job to remind me to call mom tomorrow at 9 AM.",
         "What jobs are scheduled?",
+        "Tell me about the house project.", # New input to test RAG
         "exit" # Command to end the simulated conversation
     ]
 

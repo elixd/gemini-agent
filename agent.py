@@ -1,55 +1,42 @@
-
 import os
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
-from langchain.agents import AgentExecutor, create_tool_calling_agent
-from langchain_core.prompts import ChatPromptTemplate
-from langchain.memory import ConversationBufferMemory
-from functions import create_note, update_note, list_notes, read_note
-from scheduler import Scheduler
+from langchain.agents import AgentExecutor, create_openai_tools_agent
 
 load_dotenv()
 
-# 1. Define the Model
+
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.messages import HumanMessage, AIMessage
+from langchain_community.chat_message_histories import ChatMessageHistory
+from langchain_core.runnables import RunnableWithMessageHistory
+
+from custom_tools import create_note_tool, read_note_tool, schedule_job_tool, remove_job_tool, get_scheduled_jobs_tool
+from dashboard import build_dashboard_context
+
+# --- Configuration ---
 llm = ChatOpenAI(
     model=os.getenv("MODEL_NAME"),
-    base_url="https://openrouter.ai/api/v1",
-    api_key=os.getenv("OPENROUTER_API_KEY"),
+    openai_api_base="https://openrouter.ai/api/v1",
+    openai_api_key=os.getenv("OPENROUTER_API_KEY"),
     temperature=0,
 )
 
-from langchain.tools import StructuredTool
+# --- Define Tools ---
+tools = [create_note_tool, read_note_tool, schedule_job_tool, remove_job_tool, get_scheduled_jobs_tool]
 
-# 2. Define the Tools
-scheduler = Scheduler('schedule.json')
-tools = [
-    create_note,
-    update_note,
-    list_notes,
-    read_note,
-    StructuredTool.from_function(scheduler.schedule_job),
-    StructuredTool.from_function(scheduler.get_dashboard_summary),
-]
-
-# 3. Define the Prompt
-with open("system_prompt.md", "r") as f:
-    system_prompt = f.read()
-
+# --- Define the agent prompt ---
 prompt = ChatPromptTemplate.from_messages([
-    ("system", system_prompt),
-    ("placeholder", "{chat_history}"),
+    ("system", "You are a proactive, context-aware personal AI assistant.\n\n# World Awareness Dashboard\n{dashboard}"),
+    MessagesPlaceholder(variable_name="chat_history"),
     ("human", "{input}"),
-    ("placeholder", "{agent_scratchpad}"),
+    MessagesPlaceholder(variable_name="agent_scratchpad"),
 ])
 
-# 4. Create the Agent
-agent = create_tool_calling_agent(llm, tools, prompt)
+# --- Create the Agent ---
+agent = create_openai_tools_agent(llm, tools, prompt)
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors=True)
 
-# 5. Create the Agent Executor
-memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-agent_executor = AgentExecutor(
-    agent=agent,
-    tools=tools,
-    verbose=True,
-    memory=memory,
-)
+def run_agent(user_input, scheduler, chat_history):
+    dashboard = build_dashboard_context(scheduler)
+    return agent_executor.invoke({"input": user_input, "dashboard": dashboard, "chat_history": chat_history})
