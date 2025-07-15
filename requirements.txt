@@ -1,8 +1,0 @@
-openai
-python-dotenv
-apscheduler
-langchain[anthropic]
-langchain-openai
-langgraph
-croniter
-dateparser
