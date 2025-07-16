@@ -1,0 +1,54 @@
+[
+  {
+    "role": "user",
+    "content": "now do this create a short text files. read this files. edit this file (change a section). then rename this file by adding suffix to be deleted. then delete the file."
+  },
+  {
+    "role": "model",
+    "content": "Okay, I will perform that sequence of file operations.\n\nFirst, I'll create a new text file named `test_file.txt`.\n[tool_call: write_file for content 'This is the first version of the file.\nIt has two lines.\nThis is the line to be changed.\nThe final line.' and file_path '/Users/ilya/Documents/projects/gemini-test/test_file.txt']"
+  },
+  {
+    "role": "tool",
+    "content": "Successfully created and wrote to new file: /Users/ilya/Documents/projects/gemini-test/test_file.txt."
+  },
+  {
+    "role": "model",
+    "content": "Next, I will read the file I just created.\n[tool_call: read_file for absolute_path '/Users/ilya/Documents/projects/gemini-test/test_file.txt']"
+  },
+  {
+    "role": "tool",
+    "content": "This is the first version of the file.\nIt has two lines.\nThis is the line to be changed.\nThe final line."
+  },
+  {
+    "role": "model",
+    "content": "Now, I will edit the file to change the third line.\n[tool_call: replace for file_path '/Users/ilya/Documents/projects/gemini-test/test_file.txt', old_string 'This is the line to be changed.', and new_string 'This is the edited line.']"
+  },
+  {
+    "role": "tool",
+    "content": "Successfully modified file: /Users/ilya/Documents/projects/gemini-test/test_file.txt (1 replacements)."
+  },
+  {
+    "role": "model",
+    "content": "Next, I will rename the file by adding the suffix `_to_be_deleted`.\n[tool_call: run_shell_command for command 'mv /Users/ilya/Documents/projects/gemini-test/test_file.txt /Users/ilya/Documents/projects/gemini-test/test_file_to_be_deleted.txt' and description 'Rename 'test_file.txt' to 'test_file_to_be_deleted.txt'.']"
+  },
+  {
+    "role": "tool",
+    "content": "Command: mv /Users/ilya/Documents/projects/gemini-test/test_file.txt /Users/ilya/Documents/projects/gemini-test/test_file_to_be_deleted.txt\nDirectory: (root)\nStdout: (empty)\nStderr: (empty)\nError: (none)\nExit Code: 0\nSignal: (none)\nBackground PIDs: (none)\nProcess Group PGID: 72167"
+  },
+  {
+    "role": "model",
+    "content": "Finally, I will delete the renamed file.\n[tool_call: run_shell_command for command 'rm /Users/ilya/Documents/projects/gemini-test/test_file_to_be_deleted.txt' and description 'Delete the file 'test_file_to_be_deleted.txt'.']"
+  },
+  {
+    "role": "tool",
+    "content": "Command: rm /Users/ilya/Documents/projects/gemini-test/test_file_to_be_deleted.txt\nDirectory: (root)\nStdout: (empty)\nStderr: (empty)\nError: (none)\nExit Code: 0\nSignal: (none)\nBackground PIDs: (none)\nProcess Group PGID: 72177"
+  },
+  {
+    "role": "model",
+    "content": "I have completed all the requested file operations."
+  },
+  {
+    "role": "user",
+    "content": "now save all the messages realted to that exactly and fully to another examples json"
+  }
+]
