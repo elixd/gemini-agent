@@ -453,7 +453,26 @@ Background PIDs: (none)
 Process Group PGID: 79731
 ```
 
+### Scenario 5: Run a command with forbidden syntax (Command Substitution)
+
+**Tool Call:**
+```json
+{
+  "tool_name": "run_shell_command",
+  "parameters": {
+    "command": "for i in $(seq 1 500); do echo \"This is line $i\" >> truncation_test.txt; done"
+  }
+}
+```
+
+**Output:**
+```
+Command rejected: for i in $(seq 1 500); do echo "This is line $i" >> truncation_test.txt; done
+Reason: Command substitution using $() is not allowed for security reasons
+```
+
 ## `search_file_content`
+```
 
 ### Scenario 1: Search for a pattern in a specific file
 

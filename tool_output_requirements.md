@@ -56,8 +56,10 @@ This document specifies the exact output requirements for each tool, ensuring co
 2.  **Command with Error:** For a command that produces an error, the tool must return a string with the same format as a successful command, but with the `Stderr` and `Exit Code` fields populated accordingly.
 3.  **Piped Command:** Piped commands should be treated as a single command, and the output should follow the same format as a successful command.
 4.  **Command in Directory:** When a directory is specified, the `Directory` field in the output must reflect the specified directory.
+5.  **Forbidden Syntax:** If the command contains forbidden syntax (e.g., command substitution), the tool must reject it and return the exact error string: `Command rejected: {command}\nReason: Command substitution using $() is not allowed for security reasons`.
 
 ## `search_file_content`
+`
 
 ### Requirements
 

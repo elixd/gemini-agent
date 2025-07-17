@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Environment
+.env
+
+# Build artifacts
+gemini_agent.egg-info/
+
+# State
+memory.json
