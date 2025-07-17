@@ -1,24 +1,18 @@
 from langchain_core.tools import tool
-
+from core.persistent_memory import read_memory, write_memory
 
 @tool
 def save_memory(fact: str) -> str:
     """
-Saves a specific piece of information or fact to your long-term memory.
-
-Use this tool:
-
-- When the user explicitly asks you to remember something (e.g., "Remember that I like pineapple on pizza", "Please save this: my cat's name is Whiskers").
-- When the user states a clear, concise fact about themselves, their preferences, or their environment that seems important for you to retain for future interactions to provide a more personalized and effective assistance.
-
-Do NOT use this tool:
-
-- To remember conversational context that is only relevant for the current session.
-- To save long, complex, or rambling pieces of text. The fact should be relatively short and to the point.
-- If you are unsure whether the information is a fact worth remembering long-term. If in doubt, you can ask the user, "Should I remember that for you?"
-
-## Parameters
-
-- `fact` (string, required): The specific fact or piece of information to remember. This should be a clear, self-contained statement. For example, if the user says "My favorite color is blue", the fact would be "My favorite color is blue".
-"""
-    return fact
+    Saves a specific fact to the user's long-term memory file.
+    Use this when the user explicitly asks to remember something.
+    The fact should be a concise, self-contained statement.
+    """
+    try:
+        facts = read_memory()
+        if fact not in facts:
+            facts.append(fact)
+            write_memory(facts)
+        return "Fact saved successfully."
+    except Exception as e:
+        return f"Error saving fact: {e}"

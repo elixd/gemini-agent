@@ -1,6 +1,9 @@
 import os
+from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 
+# Load environment variables, overriding any existing ones
+load_dotenv(override=True)
 
 def get_model(model_name="google/gemini-2.5-flash"):
     """
