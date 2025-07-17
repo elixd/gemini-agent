@@ -17,17 +17,28 @@ Signal: Signal number or `(none)` if no signal was received.
 Background PIDs: List of background processes started or `(none)`.
 Process Group PGID: Process group started or `(none)`"""
     try:
-        result = subprocess.run(
+        process = subprocess.Popen(
             command,
             shell=True,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
-            check=True,
-            cwd=directory
+            cwd=directory,
+            start_new_session=True
         )
-        # The output is a structured string for clarity.
-        return f"Command executed successfully.\n--- STDOUT ---\n{result.stdout}\n--- STDERR --n{result.stderr}"
-    except subprocess.CalledProcessError as e:
-        return f"Command failed with return code {e.returncode}.\n--- STDOUT ---\n{e.stdout}\n--- STDERR ---\n{e.stderr}"
+        stdout, stderr = process.communicate()
+        
+        output = f"Command: {command}\n"
+        output += f"Directory: {directory or '(root)'}\n"
+        output += f"Stdout: {stdout.strip() if stdout.strip() else '(empty)'}\n"
+        output += f"Stderr: {stderr.strip() if stderr.strip() else '(empty)'}\n"
+        output += f"Error: (none)\n"
+        output += f"Exit Code: {process.returncode}\n"
+        output += f"Signal: (none)\n"
+        output += f"Background PIDs: (none)\n"
+        output += f"Process Group PGID: {process.pid}"
+        
+        return output
+
     except Exception as e:
         return f"An unexpected error occurred: {e}"
