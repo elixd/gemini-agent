@@ -50,11 +50,10 @@ def print_compact_output(node, output):
     if "messages" in output:
         for message in output["messages"]:
             if isinstance(message, AIMessage):
+                print_agent_answer(message.content)
                 if message.tool_calls:
                     for tool_call in message.tool_calls:
                         print_tool_call(tool_call)
-                else:
-                    print_agent_answer(message.content)
             elif isinstance(message, ToolMessage):
                 print_tool_result(message.name, message.content)
 

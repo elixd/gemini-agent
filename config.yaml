@@ -1,0 +1,35 @@
+# Core application configuration
+model_settings:
+  model_name: "google/gemini-2.5-flash"
+  # Environment variable to load the OpenRouter API key from
+  api_key_env_var: "OPENROUTER_API_KEY"
+  # Base URL for the OpenAI-compatible API endpoint (e.g., OpenRouter, OpenAI, local LLM)
+  base_url: "https://openrouter.ai/api/v1"
+
+  # Standard LLM parameters (optional)
+  # These directly influence the model's output generation and can indirectly affect reasoning display.
+  # If a parameter is not specified here, a default value will be used in the code.
+  llm_parameters:
+    # temperature: 0.7  # Controls randomness (0.0 for deterministic, 1.0 for creative)
+    # max_tokens: 1024  # Maximum number of tokens in the model's response
+    # top_p: 1.0        # Nucleus sampling (e.9., 0.9 for diverse, 0.1 for focused)
+    # stop: ["\nObservation:"] # Optional: List of sequences to stop generation (e.g., for tool use)
+
+  # OpenRouter-specific 'reasoning' configuration (optional)
+  # This directly maps to the 'reasoning' object in the OpenRouter API payload.
+  # Only ONE of 'effort' or 'max_tokens' should be used.
+  # If this section is omitted or empty, reasoning will not be explicitly configured.
+  openrouter_reasoning_config:
+    # Use 'effort' for OpenAI o-series and Grok models (and others where max_tokens is converted)
+    effort: "low" # Can be "high", "medium", or "low"
+
+    # Use 'max_tokens' for Gemini thinking models and Anthropic models
+    # max_tokens: 256 # Specific token limit for reasoning tokens
+
+    # Optional: Set to true to exclude reasoning tokens from the response,
+    # while still allowing the model to use reasoning internally.
+    # exclude: false
+
+    # Optional: Set to true to enable reasoning with default parameters (medium effort, no exclusions).
+    # This is an alternative to specifying 'effort' or 'max_tokens' directly.
+    # enabled: false

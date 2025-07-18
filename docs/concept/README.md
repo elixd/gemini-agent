@@ -1,3 +1,11 @@
+# Conceptual Documentation
+
+This directory contains the conceptual framework and design principles for the agent. These documents describe the *intended approach, vision, and high-level design*.
+
+It is important to note that these documents are not a strict reflection of the current implementation's every detail. The actual implementation may vary, evolve, or deviate from these concepts as the project progresses. They serve as a guiding reference for the overall direction and underlying philosophy of the agent.
+
+---
+
 # Project Brief: Local Coding & Personal Assistant Agent
 
 ## 1. Your Mission
