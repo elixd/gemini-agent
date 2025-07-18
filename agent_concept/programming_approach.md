@@ -33,3 +33,11 @@ Understanding the agent's internal reasoning is critical for debugging and devel
 -   **Unified Logging:** We will use Python's built-in `logging` module to record key events, such as full LLM prompts, raw LLM responses, tool calls, and tool results.
 -   **Verbose Flag:** The CLI (`main.py`) will include a `--verbose` or `--debug` flag. When enabled, this flag will print the detailed event log to the console, allowing us to "peel back the abstraction" and see the agent's step-by-step reasoning. When disabled, the interface will remain a clean, simple chat.
 -   **Testability:** The same logging system will be available during automated tests, which can be configured to show verbose output on test failure, aiding in debugging.
+
+## 5. Proof-of-Concept Driven Development
+
+When faced with a complex or uncertain technical challenge, especially one involving external APIs or complex interactions, we will adhere to the following process:
+
+1.  **Isolate the Problem:** Create a new, temporary, and minimal script (a "proof of concept" or PoC) that isolates the specific problem from the rest of the application.
+2.  **Prove the Solution:** Use this script to experiment and find a working solution. This proves our technical approach is sound before we integrate it.
+3.  **Preserve the Findings:** Once a solution is found, the PoC script will be cleaned up, well-documented with comments explaining the challenge and the solution, and moved to the `proof_of_concepts` directory. This creates a permanent, runnable record of our technical decisions and saves us from solving the same problem twice.

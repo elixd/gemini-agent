@@ -9,27 +9,8 @@ from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, Tool
 from langgraph.checkpoint.memory import MemorySaver
 
 from agent.graph import create_graph
-from agent.tools.shell import run_shell_command
-from agent.tools.file_system import list_directory, read_file, write_file
-from agent.tools.memory import save_memory
-from agent.tools.web import google_web_search
+from agent.composition import TOOLS, assemble_system_prompt
 from core.models import get_model
-from core.persistent_memory import read_memory
-
-
-def assemble_system_prompt():
-    """
-    Assembles the full system prompt from the components in the prompt_components directory.
-    """
-    prompt_dir = "core/prompt_components"
-    prompt_files = sorted([f for f in os.listdir(prompt_dir) if f.endswith(".md")])
-    
-    full_prompt = ""
-    for file_name in prompt_files:
-        with open(os.path.join(prompt_dir, file_name), "r") as f:
-            full_prompt += f.read() + "\n\n"
-            
-    return full_prompt.strip()
 
 
 def print_input_header():
@@ -92,10 +73,10 @@ def main():
         epilog="""
 Examples:
   # Run in interactive mode
-  python3 cli.py
+  python3 interfaces/cli.py
 
   # Execute a single command
-  python3 cli.py -c "What is the current directory?"
+  python3 interfaces/cli.py -c "What is the current directory?"
 """
     )
     parser.add_argument(
@@ -108,69 +89,60 @@ Examples:
         type=str, 
         help="Execute a single command and exit. If not provided, the agent will start in interactive mode."
     )
+    parser.add_argument(
+        '--test-sequence',
+        nargs='+',
+        help="Execute a sequence of commands in a single session for testing."
+    )
     args = parser.parse_args()
 
-    load_dotenv(override=True)
+    load_dotenv(override=True);
 
-    tools = [run_shell_command, list_directory, read_file, write_file, save_memory, google_web_search]
-    llm = get_model().bind_tools(tools)
-    
+    # --- Agent Assembly ---
+    # This is now transparent and explicit, following the "Shared Core" approach.
+    # Any interface can replicate this logic to get a fully-formed agent.
+    llm = get_model().bind_tools(TOOLS)
     memory = MemorySaver()
-    graph = create_graph(llm, tools, checkpointer=memory)
+    graph = create_graph(llm, TOOLS, checkpointer=memory)
+    # --- End of Assembly ---
 
     session_id = "default-session"
     config = {"configurable": {"thread_id": session_id}}
 
     # Determine the initial message list
-    is_new_conversation = not memory.get(config)
+    current_state = memory.get(config)
+    is_new_conversation = not current_state
+    
     if is_new_conversation:
         print("Starting a new conversation. Assembling system prompt...")
-        system_prompt_template = assemble_system_prompt()
-        cwd = os.getcwd()
-        os_name = platform.system()
-        current_date = datetime.now().strftime("%Y-%m-%d")
-        try:
-            directory_listing = list_directory.invoke({"path": os.getcwd()})
-        except Exception as e:
-            directory_listing = f"Could not list directory: {e}"
-        system_prompt = system_prompt_template.replace("{{date}}", current_date)
-        system_prompt = system_prompt.replace("{{os}}", os_name)
-        system_prompt = system_prompt.replace("{{cwd}}", cwd)
-        system_prompt = system_prompt.replace("{{directory_listing}}", directory_listing)
-        facts = read_memory()
-        if facts:
-            system_prompt += f"\n\n# User-Specific Memory\n" + "\n".join(f"- {fact}" for fact in facts)
+        system_prompt = assemble_system_prompt()
         initial_messages = [SystemMessage(content=system_prompt)]
+        graph.update_state(config, {"messages": initial_messages})
     else:
         initial_messages = []
 
-    if args.command:
+    # The checkpointer handles state. We simply send the new message.
+    if args.test_sequence:
+        for i, command in enumerate(args.test_sequence):
+            print_input_header()
+            print(f"Step {i+1}: > {command}")
+            print_input_footer()
+            
+            for event in graph.stream({"messages": [HumanMessage(content=command)]}, config, stream_mode="updates"):
+                for node, output in event.items():
+                    print_compact_output(node, output)
+
+    elif args.command:
         print_input_header()
         print(f"> {args.command}")
         print_input_footer()
         
-        new_message = HumanMessage(content=args.command)
-        
-        # For verbose mode, construct the payload manually to ensure accuracy
-        if args.verbose:
-            current_state = memory.get(config)
-            history = (current_state.get('messages', []) if current_state else initial_messages)
-            print_payload(history + [new_message])
-
-        # Update the state with the initial messages if it's a new conversation
-        if is_new_conversation:
-            graph.update_state(config, {"messages": initial_messages})
-
-        for event in graph.stream({"messages": [new_message]}, config, stream_mode="updates"):
+        for event in graph.stream({"messages": [HumanMessage(content=args.command)]}, config, stream_mode="updates"):
             for node, output in event.items():
                 print_compact_output(node, output)
     else:
         print("Welcome to the interactive CLI agent. Type 'exit' or 'quit' to end the session.")
         
-        # On the first run in interactive mode, save the initial state
-        if is_new_conversation:
-            graph.update_state(config, {"messages": initial_messages})
-
         while True:
             try:
                 print_input_header()
@@ -179,14 +151,7 @@ Examples:
                 if user_input.lower() in ["exit", "quit"]:
                     break
                 
-                new_message = HumanMessage(content=user_input)
-
-                if args.verbose:
-                    current_state = memory.get(config)
-                    history = current_state.get('messages', [])
-                    print_payload(history + [new_message])
-
-                for event in graph.stream({"messages": [new_message]}, config, stream_mode="updates"):
+                for event in graph.stream({"messages": [HumanMessage(content=user_input)]}, config, stream_mode="updates"):
                     for node, output in event.items():
                         print_compact_output(node, output)
             except KeyboardInterrupt:
